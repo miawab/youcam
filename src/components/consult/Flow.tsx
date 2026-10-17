@@ -233,7 +233,7 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
         <section className="rise">
           <StepHead n={3} total={TOTAL} title="Here's what we see" sub="Every number below comes from a YouCam AI model, not from us." />
           <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-            {front && <img src={front} alt="Your photo" className="aspect-[4/5] w-full object-cover" />}
+            {front && <img src={front} alt="Your photo" className="aspect-[4/5] w-36 object-cover lg:w-full" />}
             <div className="grid gap-px bg-line sm:grid-cols-2">
               <Card title="Hair type" missing={analysis.missing.type}>
                 {analysis.hair.type && (
