@@ -131,21 +131,16 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
       )}
       {img && <p className="mt-1 text-center text-sm text-muted">Drag and zoom until your face fills the oval.</p>}
 
-      <div className="mx-auto mt-4 flex max-w-[380px] gap-2 [&>*]:flex-1 [&>*]:px-3">
-        {!live && (
-          <button className="btn btn-line" onClick={startCamera} type="button">
-            Use camera
-          </button>
-        )}
+      {/* Fixed positions: the main action is always on the left (Use camera, then Take photo or Use this),
+          Upload photo is always on the right, so nothing jumps between taps. */}
+      <div className="mx-auto mt-4 grid max-w-[380px] grid-cols-2 gap-2 [&>*]:px-3">
+        <button className="btn btn-solid" onClick={has ? capture : startCamera} type="button">
+          {live ? "Take photo" : img ? "Use this" : "Use camera"}
+        </button>
         <label className="btn btn-line focus-within:outline-2 focus-within:outline-offset-[3px] focus-within:outline-ink">
           Upload photo
           <input type="file" accept="image/*" className="sr-only" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
         </label>
-        {has && (
-          <button className="btn btn-solid" onClick={capture} type="button">
-            {live ? "Take photo" : "Use this"}
-          </button>
-        )}
       </div>
     </div>
   );
