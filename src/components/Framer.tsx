@@ -104,11 +104,11 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
         {!has && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
             <GuideIcon guide={guide} />
-            <p className="text-sm text-muted">{camError ?? hint}</p>
+            <p className="text-muted" role={camError ? "alert" : undefined}>{camError ?? hint}</p>
           </div>
         )}
         {/* Oval guide: 60% of the width */}
-        <svg viewBox="0 0 100 125" className="pointer-events-none absolute inset-0 h-full w-full">
+        <svg aria-hidden viewBox="0 0 100 125" className="pointer-events-none absolute inset-0 h-full w-full">
           <defs>
             <mask id={`m-${guide}`}>
               <rect width="100" height="125" fill="white" />
@@ -122,12 +122,12 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
       </div>
 
       {img && (
-        <label className="mx-auto mt-3 flex max-w-[380px] items-center gap-3 text-xs text-muted">
+        <label className="mx-auto mt-3 flex max-w-[380px] items-center gap-3 text-sm text-muted">
           Zoom
           <input type="range" min={1} max={3} step={0.01} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="w-full accent-[#141414]" />
         </label>
       )}
-      {img && <p className="mt-1 text-center text-xs text-muted">Drag and zoom until your face fills the oval.</p>}
+      {img && <p className="mt-1 text-center text-sm text-muted">Drag and zoom until your face fills the oval.</p>}
 
       <div className="mx-auto mt-4 flex max-w-[380px] flex-wrap justify-center gap-2">
         {!live && (
@@ -135,9 +135,9 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
             Use camera
           </button>
         )}
-        <label className="btn btn-line">
+        <label className="btn btn-line focus-within:outline-2 focus-within:outline-offset-[3px] focus-within:outline-ink">
           Upload photo
-          <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+          <input type="file" accept="image/*" className="sr-only" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
         </label>
         {has && (
           <button className="btn btn-solid" onClick={capture} type="button">
@@ -152,7 +152,7 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
 function GuideIcon({ guide }: { guide: Props["guide"] }) {
   const rot = guide === "right" ? -35 : guide === "left" ? 35 : 0;
   return (
-    <svg viewBox="0 0 64 64" className="h-16 w-16" fill="none" stroke="#141414" strokeWidth="1.5">
+    <svg aria-hidden viewBox="0 0 64 64" className="h-16 w-16" fill="none" stroke="#141414" strokeWidth="1.5">
       <g transform={guide === "down" ? "translate(0 6) rotate(0)" : `rotate(${rot} 32 32)`}>
         <ellipse cx="32" cy="32" rx="16" ry="20" />
         {guide === "down" ? (
