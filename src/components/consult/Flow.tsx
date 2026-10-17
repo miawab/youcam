@@ -280,14 +280,19 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-2 text-sm text-muted">Not measured: {analysis.missing.skin}</p>
+                  <p className="mt-2 text-sm text-muted">Not measured: {friendly(analysis.missing.skin ?? "")}</p>
                 )}
                 <p className="mt-4 text-xs text-muted">Higher is better. 85+ is YouCam&apos;s excellent band.</p>
               </div>
             </div>
           </div>
           <Limits />
-          <div className="mt-8 flex justify-end">
+          <div className="mt-8 flex flex-wrap justify-end gap-2">
+            {mode === "live" && (analysis.missing.type || analysis.missing.length || analysis.missing.skin) && (
+              <button className="btn btn-line" onClick={() => { setSlot(0); setStage("photos"); }}>
+                Retake photos
+              </button>
+            )}
             <button className="btn btn-solid" onClick={() => setStage("looks")}>
               Choose a look
             </button>
@@ -590,6 +595,17 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
   );
 }
 
+// YouCam error codes, in words a customer can act on.
+const ERRORS: Record<string, string> = {
+  error_face_angle_invalid: "one of the photos wasn't at the angle the AI needs. Retake with your head level (or turned about 45° for the side shots).",
+  error_face_position_too_small: "your face was too small in the frame. Fill the oval.",
+  error_face_position_out_of_boundary: "your face was cut off at the edge. Keep it inside the oval.",
+  error_no_face: "the AI couldn't find a face in that photo.",
+  error_lighting_dark: "the photo was too dark. Face a window.",
+  error_mismatch_image_size: "the three angle photos weren't the same size.",
+};
+const friendly = (m: string) => ERRORS[m] ?? m.replaceAll("_", " ");
+
 function Card({ title, missing, children }: { title: string; missing?: string; children: React.ReactNode }) {
   return (
     <div className="bg-paper p-5">
@@ -597,7 +613,7 @@ function Card({ title, missing, children }: { title: string; missing?: string; c
         <span className="label">{title}</span>
         {!missing && <Source kind="youcam" />}
       </div>
-      <div className="mt-3">{missing ? <p className="text-sm text-muted">Not measured: {missing.replaceAll("_", " ")}</p> : children}</div>
+      <div className="mt-3">{missing ? <p className="text-sm text-muted">Not measured: {friendly(missing)}</p> : children}</div>
     </div>
   );
 }

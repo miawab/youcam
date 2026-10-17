@@ -121,7 +121,7 @@ export default function Home() {
             </p>
           </div>
           <pre className="overflow-x-auto border border-paper/20 p-5 text-sm leading-relaxed">
-            <code>{`<script src="https://chairside.vercel.app/embed.js"\n        data-salon="studio-nine" defer></script>`}</code>
+            <code>{`<script src="https://chairside-salon.vercel.app/embed.js"\n        data-salon="studio-nine" defer></script>`}</code>
           </pre>
         </div>
       </section>
