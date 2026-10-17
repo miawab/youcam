@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BottomBar } from "@/components/consult/ui";
 
-// Output matches YouCam's framing rules: 4:5, face oval = 60% of the width (they ask for 50-80%).
+// Output matches YouCam's framing rules: 4:5, face oval = 68% of the width (hair models ask for 50-80%,
+// the face analyzer for more than 60%). The oval sits low so a close-up keeps the hair above it in frame.
 const OUT_W = 900;
 const OUT_H = 1125;
 
@@ -21,6 +23,23 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(380);
+
+  // Size the frame to the screen space left below it (minus the phone's bottom bar), so the whole
+  // frame and its buttons are visible without scrolling.
+  useEffect(() => {
+    const measure = () => {
+      const el = boxRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const bar = window.innerWidth < 640 ? 96 : 24;
+      const room = window.innerHeight - top - bar;
+      setFit(Math.round(Math.min(380, Math.max(180, room * 0.8))));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   const stop = useCallback(() => {
     stream?.getTracks().forEach((t) => t.stop());
@@ -86,8 +105,7 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
       <div
         ref={boxRef}
         className="relative mx-auto aspect-[4/5] w-full overflow-hidden bg-tile touch-none select-none"
-        // Small enough that the photo strip, the frame and the buttons fit on one phone screen.
-        style={{ maxWidth: "min(380px, max(220px, calc((100svh - 420px) * 0.8)))" }}
+        style={{ maxWidth: fit }}
         onPointerDown={(e) => {
           if (!img) return;
           (e.target as Element).setPointerCapture(e.pointerId);
@@ -109,18 +127,19 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
             <p className="text-muted" role={camError ? "alert" : undefined}>{camError ?? hint}</p>
           </div>
         )}
-        {/* Oval guide: 60% of the width */}
+        {/* Oval guide: 68% of the width, centred just below the middle, room for hair on top */}
         <svg aria-hidden viewBox="0 0 100 125" className="pointer-events-none absolute inset-0 h-full w-full">
           <defs>
             <mask id={`m-${guide}`}>
               <rect width="100" height="125" fill="white" />
-              <ellipse cx="50" cy="56" rx="30" ry="39" fill="black" />
+              <ellipse cx="50" cy="66" rx="34" ry="43" fill="black" />
             </mask>
           </defs>
           <rect width="100" height="125" fill="rgba(255,255,255,0.55)" mask={`url(#m-${guide})`} />
-          <ellipse cx="50" cy="56" rx="30" ry="39" fill="none" stroke="#141414" strokeWidth="0.5" strokeDasharray="2 1.5" />
+          <ellipse cx="50" cy="66" rx="34" ry="43" fill="none" stroke="#141414" strokeWidth="0.5" strokeDasharray="2 1.5" />
         </svg>
-        {has && <div className="label absolute left-3 top-3 bg-paper px-2 py-1">{hint}</div>}
+        {/* Bottom edge, so it never covers the hair the models need to see. */}
+        {has && <div className="label absolute inset-x-2 bottom-2 bg-paper/90 px-2 py-1 text-center text-[11px]">{hint}</div>}
       </div>
 
       {img && (
@@ -131,19 +150,27 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
       )}
       {img && <p className="mt-1 text-center text-sm text-muted">Drag and zoom until your face fills the oval.</p>}
 
-      {/* Fixed positions: the main action is always on the left (Use camera, then Take photo or Use this),
-          Upload photo is always on the right, so nothing jumps between taps. */}
-      <div className="mx-auto mt-4 grid max-w-[380px] grid-cols-2 gap-2 [&>*]:px-3">
-        <button className="btn btn-solid" onClick={has ? capture : startCamera} type="button">
+      <div className="mx-auto mt-4 hidden max-w-[380px] sm:block">{controls()}</div>
+      {/* On phones the controls live in the bar pinned to the bottom, so they're visible without scrolling. */}
+      <BottomBar>{controls()}</BottomBar>
+    </div>
+  );
+
+  // Fixed positions: the main action is always on the left (Use camera, then Take photo or Use this),
+  // Upload photo is always on the right, so nothing jumps between taps.
+  function controls() {
+    return (
+      <div className="grid w-full grid-cols-2 gap-2 [&>*]:px-3">
+        <button className="btn btn-solid whitespace-nowrap" onClick={has ? capture : startCamera} type="button">
           {live ? "Take photo" : img ? "Use this" : "Use camera"}
         </button>
-        <label className="btn btn-line focus-within:outline-2 focus-within:outline-offset-[3px] focus-within:outline-ink">
+        <label className="btn btn-line cursor-pointer whitespace-nowrap focus-within:outline-2 focus-within:outline-offset-[3px] focus-within:outline-ink">
           Upload photo
           <input type="file" accept="image/*" className="sr-only" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
         </label>
       </div>
-    </div>
-  );
+    );
+  }
 }
 
 // Shows the movement: a head seen from the front, turned (features shift, nose points) with an arrow,

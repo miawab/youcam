@@ -272,7 +272,7 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
                 {SLOTS[slot].optional ? "Optional. Lets YouCam look at your hairline." : "Three angles let YouCam read your curl pattern and frizz."}
               </p>
             )}
-            <div className="grid max-w-[300px] grid-cols-4 gap-2 sm:max-w-sm" role="list" aria-label="Your photos">
+            <div className="grid max-w-[230px] grid-cols-4 gap-2 sm:max-w-sm" role="list" aria-label="Your photos">
               {SLOTS.map((s, i) => {
                 const done = !!photos[s.id];
                 return (
@@ -295,9 +295,14 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
                 );
               })}
             </div>
-            <p className="mt-2 min-h-5 text-sm text-accent" role="status" aria-live="polite">
+            <p className={`text-sm text-accent ${saved ? "mt-2" : ""}`} role="status" aria-live="polite">
               {saved ? `✓ ${saved}` : ""}
             </p>
+            {slot !== null && photosReady && (
+              <button className="btn btn-line mt-1 w-full sm:hidden" onClick={analyse}>
+                Skip chin-down, read my photos
+              </button>
+            )}
             {error && <p role="alert" className="mt-2 border border-warn p-3 text-warn">{error}</p>}
           </div>
 
@@ -340,15 +345,18 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
             <span className="text-muted">{photosReady ? "Photos ready" : `${requiredDone} of 3 photos`}</span>
           </div>
 
-          <BottomBar>
-            <div className="text-sm">
-              <div className="font-medium">{photosReady ? "Photos ready" : `${requiredDone} of 3 photos`}</div>
-              <div className="text-muted">{photos.down ? "Plus chin-down" : "Chin-down optional"}</div>
-            </div>
-            <button className="btn btn-solid" disabled={!photosReady} onClick={analyse}>
-              Read my hair &amp; skin
-            </button>
-          </BottomBar>
+          {/* While a photo slot is open, the camera controls own the bottom bar (see Framer). */}
+          {slot === null && (
+            <BottomBar>
+              <div className="text-sm">
+                <div className="font-medium">Photos ready</div>
+                <div className="text-muted">{photos.down ? "Plus chin-down" : "Chin-down optional"}</div>
+              </div>
+              <button className="btn btn-solid" onClick={analyse}>
+                Read my hair &amp; skin
+              </button>
+            </BottomBar>
+          )}
         </section>
       )}
 
