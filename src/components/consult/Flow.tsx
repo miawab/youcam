@@ -172,14 +172,36 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
       )}
 
       {stage === "photos" && (
-        <section className="rise">
-          <StepHead n={1} total={TOTAL} title={SLOTS[slot].title} sub="Three angles let YouCam read your curl pattern and frizz. The chin-down photo lets it look at your hairline." />
-          <div className="mb-6 flex gap-2">
-            {SLOTS.map((s, i) => (
-              <button key={s.id} onClick={() => setSlot(i)} className={`relative aspect-[4/5] w-16 overflow-hidden border ${i === slot ? "border-ink" : "border-line"} bg-tile`}>
-                {photos[s.id] ? <img src={photos[s.id]!.url} alt="" className="h-full w-full object-cover" /> : <span className="label absolute inset-0 flex items-center justify-center text-[10px] text-muted">{i + 1}</span>}
+        <section className="rise grid gap-10 md:grid-cols-[1fr_380px]">
+          <div>
+            <StepHead n={1} total={TOTAL} title={SLOTS[slot].title} sub="Three angles let YouCam read your curl pattern and frizz. The chin-down photo lets it look at your hairline." />
+            <div className="flex gap-2">
+              {SLOTS.map((s, i) => (
+                <button key={s.id} onClick={() => setSlot(i)} className="text-left">
+                  <div className={`relative aspect-[4/5] w-20 overflow-hidden border bg-tile ${i === slot ? "border-ink" : "border-line"}`}>
+                    {photos[s.id] ? <img src={photos[s.id]!.url} alt="" className="h-full w-full object-cover" /> : <span className="label absolute inset-0 flex items-center justify-center text-muted">{i + 1}</span>}
+                  </div>
+                  <div className="label mt-1 text-[10px] text-muted">{s.optional ? "Optional" : photos[s.id] ? "Done" : "Needed"}</div>
+                </button>
+              ))}
+            </div>
+            <ul className="mt-8 space-y-3 border-t border-line pt-6 text-sm">
+              <li><span className="label mr-2">Light</span>Face a window. Dark photos lower skin scores.</li>
+              <li><span className="label mr-2">Hair</span>Down and untied, the way you usually wear it.</li>
+              <li><span className="label mr-2">Frame</span>Fill the oval. Keep your head level unless asked to turn.</li>
+              <li><span className="label mr-2">Privacy</span>Photos go to YouCam for analysis. We don&apos;t store them; YouCam keeps results for 24 hours.</li>
+            </ul>
+            {error && <p className="mt-6 border border-warn p-3 text-sm text-warn">{error}</p>}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button className="btn btn-solid" disabled={!photos.front || !photos.right || !photos.left} onClick={analyse}>
+                Read my hair &amp; skin
               </button>
-            ))}
+              {SLOTS[slot].optional && !photos[SLOTS[slot].id] && photos.front && photos.right && photos.left && (
+                <button className="btn btn-line" onClick={analyse}>
+                  Skip chin-down
+                </button>
+              )}
+            </div>
           </div>
           <Framer
             key={SLOTS[slot].id}
@@ -190,17 +212,6 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
               if (slot < SLOTS.length - 1) setSlot(slot + 1);
             }}
           />
-          {error && <p className="mt-4 text-center text-sm text-warn">{error}</p>}
-          <div className="mt-8 flex justify-center gap-3">
-            {SLOTS[slot].optional && !photos[SLOTS[slot].id] && photos.front && (
-              <button className="btn btn-line" onClick={analyse}>
-                Skip this one
-              </button>
-            )}
-            <button className="btn btn-solid" disabled={!photos.front || !photos.right || !photos.left} onClick={analyse}>
-              Read my hair &amp; skin
-            </button>
-          </div>
         </section>
       )}
 
