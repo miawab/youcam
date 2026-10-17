@@ -30,5 +30,5 @@ YouCam API Skin AI & eCommerce VTO Hackathon (Devpost, by Perfect Corp): https:/
 - Real problems from real friends with data that exists today. No invented personas, keep people's quotes word for word.
 - Videos: a storyboard, voiceover, big text, big zoomed focus, empty space, no clutter, no interpuncts or em dashes on screen. Never a plain screen recording.
 - Devpost winners average ~13 gallery images, ~1,200 words, a live link and tests.
-- Git: commits use `179867549+miawab@users.noreply.github.com` (already set in this repo). Repo `github.com/miawab/youcam` is **private**. Either share it with the sponsor's address when submitting, or make it public with a license.
+- Git: commits use `179867549+miawab@users.noreply.github.com` (already set in this repo). Repo `github.com/miawab/youcam` is **public with an MIT license**, so never commit secrets.
 - Research notes for this entry go in `../hackathon/devpost/me/projects/youcam/`. Log the entry in `../hackathon/devpost/me/record.json`.
