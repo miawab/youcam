@@ -7,15 +7,16 @@ import { SALON, SERVICES, pkr } from "@/lib/catalog";
 import { LENGTH_NAMES, SKIN_BENEFITS, SKIN_LABEL, SKIN_SERVICE, effortLabel, planFor, skinPicks } from "@/lib/route";
 import { SAMPLE } from "@/lib/sample";
 import { faceNote, suggest } from "@/lib/suggest";
+import { loadChecker, measure, problem, type Pose } from "@/lib/pose";
 import type { Analysis, Plan, SkinConcern, Template } from "@/lib/types";
 import { BottomBar, Choice, Compare, Meter, Source, Spinner, StepHead } from "./ui";
 
 const TEMPLATES = templatesJson as Template[];
 type Slot = "front" | "right" | "left" | "down";
 const SLOTS: { id: Slot; short: string; title: string; hint: string; optional?: boolean }[] = [
-  { id: "front", short: "Front", title: "Look straight ahead", hint: "Face the camera, hair down" },
-  { id: "right", short: "Right", title: "Turn your head to the right", hint: "Turn about 45°, keep your chin level" },
-  { id: "left", short: "Left", title: "Turn your head to the left", hint: "Turn about 45°, keep your chin level" },
+  { id: "front", short: "Front", title: "Look straight ahead", hint: "Face the camera, hair down, no glasses" },
+  { id: "right", short: "Right", title: "Turn your head to the right", hint: "Turn about 45°, chin level, no glasses" },
+  { id: "left", short: "Left", title: "Turn your head to the left", hint: "Turn about 45°, chin level, no glasses" },
   { id: "down", short: "Chin down", title: "Tip your chin down", hint: "So the top of your head and hairline show", optional: true },
 ];
 const REQUIRED: Slot[] = ["front", "right", "left"];
@@ -37,7 +38,9 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
   const [stage, setStage] = useState<Stage>("intro");
   const [mode, setMode] = useState<"live" | "sample">("sample");
   const [liveReason, setLiveReason] = useState<string | null>(null);
-  const [photos, setPhotos] = useState<Partial<Record<Slot, { blob?: Blob; url: string }>>>({});
+  const [photos, setPhotos] = useState<Partial<Record<Slot, { blob?: Blob; url: string; pose?: Pose | null; issue?: string | null }>>>({});
+  const [checking, setChecking] = useState(false);
+  const [retakeKey, setRetakeKey] = useState(0);
   const [slot, setSlot] = useState<number | null>(0);
   const [saved, setSaved] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
@@ -123,7 +126,14 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
     go("reading");
     setError(null);
     const fd = new FormData();
-    for (const s of SLOTS) if (photos[s.id]?.blob) fd.append(s.id, photos[s.id]!.blob!, `${s.id}.jpg`);
+    // YouCam's accepted order has the "right" photo with the nose toward the image's right. If the two side
+    // photos were taken the other way round, swap them rather than make the customer retake.
+    const swap = (photos.right?.pose?.yaw ?? 1) < 0 && (photos.left?.pose?.yaw ?? -1) > 0;
+    const pick: Record<Slot, Slot> = { front: "front", right: swap ? "left" : "right", left: swap ? "right" : "left", down: "down" };
+    for (const s of SLOTS) {
+      const b = photos[pick[s.id]]?.blob;
+      if (b) fd.append(s.id, b, `${s.id}.jpg`);
+    }
     try {
       const r = await fetch("/api/analyze", { method: "POST", body: fd });
       const d = await r.json();
@@ -206,15 +216,36 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
   const photosReady = requiredDone === REQUIRED.length;
   const hasBar = ["photos", "plan", "skin"].includes(stage);
 
-  function captured(blob: Blob) {
+  // Start downloading the on-device photo checker as soon as the photo step opens.
+  useEffect(() => {
+    if (stage === "photos") loadChecker().catch(() => {});
+  }, [stage]);
+
+  // Check each photo on the phone (angle, face size) before moving on, so a bad one is caught here,
+  // by name, instead of YouCam rejecting the whole set later.
+  async function captured(blob: Blob) {
     if (slot === null) return;
-    const id = SLOTS[slot].id;
-    setPhotos((p) => ({ ...p, [id]: { blob, url: URL.createObjectURL(blob) } }));
-    setSaved(`${SLOTS[slot].short} photo saved`);
-    // Next empty required slot, or the "all set" view once the three angles are in.
-    const next = SLOTS.findIndex((s, i) => i !== slot && !s.optional && !photos[s.id]);
+    const s = SLOTS[slot];
+    const url = URL.createObjectURL(blob);
+    setSaved(null);
+    setChecking(true);
+    const pose = await measure(blob);
+    const other = s.id === "right" ? photos.left?.pose : s.id === "left" ? photos.right?.pose : undefined;
+    const issue = problem(s.id, pose, other);
+    setChecking(false);
+    setPhotos((p) => ({ ...p, [s.id]: { blob, url, pose, issue } }));
+    if (issue) return;
+    setSaved(`${s.short} photo looks good`);
+    advance(s.id);
+  }
+
+  // Next empty or flagged required slot, or the "all set" view once the three angles are in.
+  function advance(done: Slot) {
+    const next = SLOTS.findIndex((x) => x.id !== done && !x.optional && (!photos[x.id] || photos[x.id]?.issue));
     setSlot(next === -1 ? null : next);
   }
+
+  const slotIssue = slot !== null ? photos[SLOTS[slot].id]?.issue : null;
 
   return (
     <div className={`${embedded ? "px-4 py-6 sm:px-5" : "mx-auto max-w-5xl px-4 py-8 sm:px-5 sm:py-14"} ${hasBar ? "pb-32 sm:pb-14" : ""}`}>
@@ -282,22 +313,45 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
                     onClick={() => setSlot(i)}
                     className="text-left"
                     aria-current={i === slot ? "step" : undefined}
-                    aria-label={`${s.short} photo, ${done ? "saved, tap to retake" : s.optional ? "optional" : "needed"}`}
+                    aria-label={`${s.short} photo, ${done ? (photos[s.id]?.issue ? "needs a retake" : "saved, tap to retake") : s.optional ? "optional" : "needed"}`}
                   >
                     <div className={`relative aspect-[4/5] w-full overflow-hidden bg-tile ${i === slot ? "outline-2 outline-offset-2 outline-ink" : ""} ${done ? "" : "border border-dashed border-muted/50"}`}>
                       {done ? <img src={photos[s.id]!.url} alt="" className="h-full w-full object-cover" /> : <span className="label absolute inset-0 flex items-center justify-center text-muted">{i + 1}</span>}
                       {done && (
-                        <span aria-hidden className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[11px] text-paper">✓</span>
+                        <span aria-hidden className={`absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-paper ${photos[s.id]?.issue ? "bg-warn" : "bg-accent"}`}>
+                          {photos[s.id]?.issue ? "!" : "✓"}
+                        </span>
                       )}
                     </div>
-                    <div className={`label mt-1.5 truncate text-[11px] ${done ? "text-accent" : "text-muted"}`}>{s.short}</div>
+                    <div className={`label mt-1.5 truncate text-[11px] ${done ? (photos[s.id]?.issue ? "text-warn" : "text-accent") : "text-muted"}`}>{s.short}</div>
                   </button>
                 );
               })}
             </div>
-            <p className={`text-sm text-accent ${saved ? "mt-2" : ""}`} role="status" aria-live="polite">
-              {saved ? `✓ ${saved}` : ""}
+            <p className={`text-sm ${checking ? "mt-2 text-muted" : saved ? "mt-2 text-accent" : ""}`} role="status" aria-live="polite">
+              {checking ? "Checking the photo…" : saved ? `✓ ${saved}` : ""}
             </p>
+            {slotIssue && slot !== null && (
+              <div role="alert" className="mt-3 border border-warn p-4">
+                <div className="label text-warn">{SLOTS[slot].short} photo needs a retake</div>
+                <p className="mt-1">{slotIssue}</p>
+                <div className="mt-2 flex flex-wrap gap-x-5">
+                  <button className="label min-h-11 underline underline-offset-4" onClick={() => setRetakeKey((k) => k + 1)}>
+                    Retake
+                  </button>
+                  <button
+                    className="label min-h-11 text-muted underline underline-offset-4"
+                    onClick={() => {
+                      const id = SLOTS[slot].id;
+                      setPhotos((p) => ({ ...p, [id]: { ...p[id]!, issue: null } }));
+                      advance(id);
+                    }}
+                  >
+                    Use it anyway
+                  </button>
+                </div>
+              </div>
+            )}
             {slot !== null && photosReady && (
               <button className="btn btn-line mt-1 w-full sm:hidden" onClick={analyse}>
                 Skip chin-down, read my photos
@@ -325,13 +379,14 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
                 )}
               </div>
             ) : (
-              <Framer key={SLOTS[slot].id} guide={SLOTS[slot].id} hint={SLOTS[slot].hint} onCapture={captured} />
+              <Framer key={`${SLOTS[slot].id}-${retakeKey}`} guide={SLOTS[slot].id} hint={SLOTS[slot].hint} onCapture={captured} />
             )}
           </div>
 
           <details className="border-t border-line pt-4 md:open:pb-2">
             <summary className="label cursor-pointer py-2">Tips for a good photo</summary>
             <ul className="mt-3 space-y-3">
+              <li className="grid grid-cols-[80px_1fr] gap-2"><span className="label pt-0.5">Glasses</span>Take them off. They hide your eyes from the face models.</li>
               <li className="grid grid-cols-[80px_1fr] gap-2"><span className="label pt-0.5">Light</span>Face a window. Dark photos lower skin scores.</li>
               <li className="grid grid-cols-[80px_1fr] gap-2"><span className="label pt-0.5">Hair</span>Down and untied, the way you usually wear it.</li>
               <li className="grid grid-cols-[80px_1fr] gap-2"><span className="label pt-0.5">Frame</span>Fill the oval. Keep your chin level unless asked.</li>
@@ -453,7 +508,14 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
           <Limits />
           <div className="actions-rev mt-8 flex flex-wrap justify-end gap-2">
             {mode === "live" && (analysis.missing.type || analysis.missing.length || analysis.missing.skin) && (
-              <button className="btn btn-line" onClick={() => { setSlot(0); go("photos"); }}>
+              <button
+                className="btn btn-line"
+                onClick={() => {
+                  // Front-only readings failing points at the front photo; otherwise it's the side photos.
+                  setSlot(analysis.missing.length || analysis.missing.skin || analysis.missing.face ? 0 : 1);
+                  go("photos");
+                }}
+              >
                 Retake photos
               </button>
             )}
@@ -765,7 +827,7 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
 
 // YouCam error codes, in words a customer can act on.
 const ERRORS: Record<string, string> = {
-  error_face_angle_invalid: "one of the photos wasn't at the angle the AI needs. Retake with your chin level (or turned about 45° for the side shots).",
+  error_face_angle_invalid: "YouCam needs the front photo within 10° of straight and the side photos turned more than 15°. Retake the side photos and turn further.",
   error_face_position_too_small: "your face was too small in the frame. Fill the oval.",
   error_face_position_out_of_boundary: "your face was cut off at the edge. Keep it inside the oval.",
   error_face_not_forward_facing: "the front photo wasn't facing the camera straight on.",
