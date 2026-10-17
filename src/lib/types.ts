@@ -17,9 +17,13 @@ export type SkinReading = {
 export type Analysis = {
   hair: HairReading;
   skin?: SkinReading;
+  // YouCam Face Analyzer. Gender only picks which looks open first; the customer can switch.
+  face?: { shape: string; gender?: "female" | "male" };
   // Which readings failed and why (YouCam error codes), so the UI can be honest about gaps.
-  missing: Partial<Record<"type" | "frizz" | "length" | "density" | "skin", string>>;
+  missing: Partial<Record<"type" | "frizz" | "length" | "density" | "skin" | "face", string>>;
   frontFileId?: string;
+  // Signed token from /api/analyze; try-ons and skin previews only run with it.
+  session?: string;
 };
 
 export type Template = {

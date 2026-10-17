@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export function Source({ kind }: { kind: "youcam" | "rule" }) {
   return kind === "youcam" ? <span className="chip chip-yc">Measured by YouCam</span> : <span className="chip chip-rule">Salon rule</span>;
@@ -8,26 +9,44 @@ export function Source({ kind }: { kind: "youcam" | "rule" }) {
 
 export function StepHead({ title, sub }: { title: string; sub?: string }) {
   return (
-    <div className="mb-8">
-      <h2 data-step-title tabIndex={-1} className="text-3xl font-medium tracking-tight outline-none sm:text-4xl">
+    <div className="mb-5 sm:mb-8">
+      <h2 data-step-title tabIndex={-1} className="text-[1.75rem] font-medium leading-tight tracking-tight outline-none sm:text-4xl">
         {title}
       </h2>
-      {sub && <p className="mt-3 max-w-xl text-lg text-muted">{sub}</p>}
+      {sub && <p className="mt-2 max-w-xl text-muted sm:mt-3 sm:text-lg">{sub}</p>}
     </div>
   );
 }
 
-// Add / Skip pair. aria-pressed tells screen readers which one is chosen.
-export function Toggle({ name, on, set }: { name: string; on: boolean; set: (v: boolean) => void }) {
+// The decision on an open recommendation: two equal, full-width choices.
+export function Choice({ name, onAdd, onSkip, skipNote }: { name: string; onAdd: () => void; onSkip: () => void; skipNote?: string }) {
   return (
-    <div className="flex gap-2" role="group" aria-label={name}>
-      <button aria-pressed={on} className={`btn ${on ? "btn-solid" : "btn-line"} min-h-11 px-5`} onClick={() => set(true)}>
-        {on ? "Added" : "Add"}
-      </button>
-      <button aria-pressed={!on} className={`btn ${!on ? "btn-solid" : "btn-line"} min-h-11 px-5`} onClick={() => set(false)}>
-        {on ? "Skip" : "Skipped"}
-      </button>
+    <div className="mt-5 border-t border-line pt-4" role="group" aria-label={`${name}: add or skip`}>
+      <div className="grid grid-cols-2 gap-2">
+        <button className="btn btn-solid whitespace-nowrap px-3" onClick={onAdd}>
+          <span aria-hidden>+</span> Add to plan
+        </button>
+        <button className="btn btn-line px-3" onClick={onSkip}>
+          Skip
+        </button>
+      </div>
+      {skipNote && <p className="mt-2 text-sm text-muted">{skipNote}</p>}
     </div>
+  );
+}
+
+// Phones: pinned to the bottom of the screen so the main action and running total are always in reach.
+// Larger screens: hidden, the same actions sit inline in the page. Portalled to <body> because the
+// step's entry animation uses a transform, which would otherwise pin a fixed bar to the section.
+export function BottomBar({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  if (!ready) return null;
+  return createPortal(
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-ink bg-paper px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 sm:hidden">
+      <div className="flex items-center justify-between gap-3 [&>.btn]:shrink-0 [&>.btn]:px-4">{children}</div>
+    </div>,
+    document.body,
   );
 }
 

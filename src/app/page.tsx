@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import SiteHeader, { Mark } from "@/components/SiteHeader";
 import { SAMPLE } from "@/lib/sample";
 
@@ -8,6 +9,7 @@ const APIS = [
   ["AI Hair Length Detection", "Five length classes"],
   ["AI Hair Density Detection", "A hairline read from a chin-down photo"],
   ["AI Skin Analysis", "Breakouts, texture, under-eyes, radiance, skin age"],
+  ["AI Face Analyzer", "Face shape, for looks that suit you"],
   ["AI Hairstyle Virtual Try-On", "Any of 40 looks on your own face"],
   ["AI Skin Simulation", "Your skin after the treatments you add"],
 ];
@@ -87,7 +89,9 @@ const STEP_VISUALS = [
   </div>,
 ];
 
-export default function Home() {
+export default async function Home() {
+  // The snippet shows whatever host serves this page, so the deploy URL isn't hard-coded in the repo.
+  const host = (await headers()).get("host") ?? "localhost:3000";
   return (
     <main>
       <SiteHeader />
@@ -188,7 +192,7 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-5 py-20 md:py-28">
         <div className="grid gap-10 md:grid-cols-2">
           <div>
-            <div className="label text-muted">Seven YouCam APIs, all load-bearing</div>
+            <div className="label text-muted">Eight YouCam APIs, all load-bearing</div>
             <ul className="mt-6 divide-y divide-line border-y border-line">
               {APIS.map(([n, d]) => (
                 <li key={n} className="flex flex-col gap-1 py-4 sm:flex-row sm:justify-between sm:gap-6">
@@ -220,7 +224,7 @@ export default function Home() {
             </p>
           </div>
           <pre className="overflow-x-auto border border-paper/20 p-5 text-sm leading-relaxed">
-            <code>{`<script src="https://chairside-salon.vercel.app/embed.js"\n        data-salon="studio-nine" defer></script>`}</code>
+            <code>{`<script src="https://${host}/embed.js"\n        data-salon="studio-nine" defer></script>`}</code>
           </pre>
         </div>
       </section>

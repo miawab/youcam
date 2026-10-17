@@ -1,4 +1,4 @@
-import { allow, ipOf } from "@/lib/limit";
+import { LIMITS, checkSession, limited, take } from "@/lib/limit";
 import type { SkinConcern } from "@/lib/types";
 import { liveAllowed, runTask, upload } from "@/lib/youcam";
 
@@ -16,12 +16,14 @@ const PARAM: Record<SkinConcern, string> = {
 const ALLOWED = /^https:\/\/yce-[a-z0-9-]+\.s3[a-z0-9.-]*\.amazonaws\.com\//;
 
 export async function POST(req: Request) {
-  const { imageUrl, concerns } = (await req.json()) as { imageUrl: string; concerns: SkinConcern[] };
+  const { imageUrl, concerns, session } = (await req.json()) as { imageUrl: string; concerns: SkinConcern[]; session: string };
   if (typeof imageUrl !== "string" || !ALLOWED.test(imageUrl) || !Array.isArray(concerns) || concerns.length === 0)
     return Response.json({ error: "bad request" }, { status: 400 });
   const gate = await liveAllowed();
   if (!gate.live) return Response.json({ error: "sample_only", reason: gate.reason }, { status: 409 });
-  if (!allow(ipOf(req), 4)) return Response.json({ error: "sample_only", reason: "Daily demo limit reached" }, { status: 429 });
+  const s = checkSession(session);
+  if (!s) return limited("Your session ended. Start a new consultation.");
+  if (!take("after:" + s.sid, LIMITS.aftersPerSession, LIMITS.sessionMinutes * 60_000)) return limited("Skin preview limit reached for this session.");
 
   // YouCam can't download its own signed result URLs, so re-upload the try-on image.
   const img = new Uint8Array(await (await fetch(imageUrl)).arrayBuffer());

@@ -16,6 +16,7 @@ export const SAMPLE = {
       length: { level: 4, term: "above chest" },
     },
     skin: { scores: { acne: 99, texture: 98, dark_circle: 77, radiance: 84 }, skinAge: 29 },
+    face: { shape: "Diamond", gender: "female" },
     missing: { density: "No head-down photo in this sample" },
   } satisfies Analysis,
   // Cached try-ons (YouCam AI Hairstyle v2.1) and one skin simulation on top of the straight look.

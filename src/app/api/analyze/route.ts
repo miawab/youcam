@@ -1,14 +1,13 @@
 import { unzipSync, strFromU8 } from "fflate";
 import { lengthLevel, textureFromMapping } from "@/lib/route";
-import { allow, ipOf } from "@/lib/limit";
+import { DAY, HOUR, LIMITS, ipOf, limited, newSession, runsCookie, runsFromCookie, take } from "@/lib/limit";
 import type { Analysis, SkinConcern } from "@/lib/types";
 import { liveAllowed, runTask, upload } from "@/lib/youcam";
 
 export const maxDuration = 60;
 
 const SKIN_ACTIONS = ["acne", "texture", "dark_circle_v2", "radiance"];
-// Units: type 2 + frizz 2 + length 2 + density 1 + skin 9.
-const COST = 16;
+// Units per analysis: type 2 + frizz 2 + length 2 + density 1 + skin 9 + face analyzer 10 = 26.
 
 async function bytesOf(form: FormData, name: string) {
   const f = form.get(name);
@@ -31,7 +30,10 @@ async function skinScores(zipUrl: string) {
 export async function POST(req: Request) {
   const gate = await liveAllowed();
   if (!gate.live) return Response.json({ error: "sample_only", reason: gate.reason }, { status: 409 });
-  if (!allow(ipOf(req), COST)) return Response.json({ error: "sample_only", reason: "Daily demo limit reached" }, { status: 429 });
+  const runs = runsFromCookie(req);
+  if (runs >= LIMITS.analysesPerIpPerDay) return limited("You've used today's free live readings. Try the sample customer, or come back tomorrow.");
+  if (!take("ip:" + ipOf(req), LIMITS.analysesPerIpPerDay, DAY)) return limited("You've used today's free live readings. Try the sample customer, or come back tomorrow.");
+  if (!take("global", LIMITS.analysesPerHour, HOUR)) return limited("The demo is busy right now. Try again in a little while, or use the sample customer.");
 
   const form = await req.formData();
   const [front, right, left, down] = await Promise.all(["front", "right", "left", "down"].map((n) => bytesOf(form, n)));
@@ -45,12 +47,13 @@ export async function POST(req: Request) {
   ]);
   const angles = fRight && fLeft ? [fFront, fRight, fLeft] : null;
 
-  const [type, frizz, length, density, skin] = await Promise.all([
+  const [type, frizz, length, density, skin, face] = await Promise.all([
     angles ? runTask("v2.0/task/hair-type-detection", { src_file_ids: angles }) : null,
     angles ? runTask("v2.0/task/hair-frizziness-detection", { src_file_ids: angles }) : null,
     runTask("v2.0/task/hair-length-detection", { src_file_id: fFront }),
     fDown ? runTask("v2.0/task/hair-density-detection", { src_file_id: fDown }) : null,
     runTask("v2.1/task/skin-analysis", { src_file_id: fFront, dst_actions: SKIN_ACTIONS }),
+    runTask("v2.0/task/face-attr-analysis", { src_file_id: fFront, features: ["faceShape", "gender"], face_angle_strictness_level: "medium" }),
   ]);
 
   const out: Analysis = { hair: {}, missing: {}, frontFileId: fFront };
@@ -77,6 +80,11 @@ export async function POST(req: Request) {
       out.missing.skin = "could not read skin results";
     }
   } else out.missing.skin = skin.error;
+  const shape = face.ok ? (face.results.faceshape as string) : undefined;
+  if (face.ok && shape && shape !== "Unknown") {
+    const g = (face.results.agegender as { gender?: string } | undefined)?.gender;
+    out.face = { shape, gender: g === "female" || g === "male" ? g : undefined };
+  } else out.missing.face = face.ok ? "face shape unclear" : face.error;
 
-  return Response.json(out);
+  return Response.json({ ...out, session: newSession(fFront) }, { headers: { "Set-Cookie": runsCookie(runs + 1) } });
 }

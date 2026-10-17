@@ -85,7 +85,9 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
     <div className="w-full">
       <div
         ref={boxRef}
-        className="relative mx-auto aspect-[4/5] w-full max-w-[380px] overflow-hidden bg-tile touch-none select-none"
+        className="relative mx-auto aspect-[4/5] w-full overflow-hidden bg-tile touch-none select-none"
+        // Small enough that the photo strip, the frame and the buttons fit on one phone screen.
+        style={{ maxWidth: "min(380px, max(220px, calc((100svh - 420px) * 0.8)))" }}
         onPointerDown={(e) => {
           if (!img) return;
           (e.target as Element).setPointerCapture(e.pointerId);
@@ -149,22 +151,41 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
   );
 }
 
+// Shows the movement: a head seen from the front, turned (features shift, nose points) with an arrow,
+// or tipped forward. Turning is a rotation around the neck, not a sideways tilt.
 function GuideIcon({ guide }: { guide: Props["guide"] }) {
-  const rot = guide === "right" ? -35 : guide === "left" ? 35 : 0;
+  const ink = "#141414";
+  if (guide === "down")
+    return (
+      <svg aria-hidden viewBox="0 0 80 64" className="h-16 w-20" fill="none" stroke={ink} strokeWidth="1.5">
+        <ellipse cx="40" cy="34" rx="16" ry="19" />
+        <path d="M25 27c5-9 25-9 30 0" />
+        <path d="M31 40h3M46 40h3" />
+        <path d="M62 16v18m-4-4 4 4 4-4" />
+      </svg>
+    );
+  if (guide === "right" || guide === "left") {
+    const d = guide === "right" ? 1 : -1;
+    const x = (v: number) => 40 + d * v;
+    return (
+      <svg aria-hidden viewBox="0 0 80 64" className="h-16 w-20" fill="none" stroke={ink} strokeWidth="1.5">
+        <ellipse cx="40" cy="34" rx="15" ry="19" />
+        <circle cx={x(2)} cy="31" r="1.4" fill={ink} />
+        <circle cx={x(10)} cy="31" r="1.4" fill={ink} />
+        <path d={`M${x(8)} 33 L${x(14)} 39 L${x(8)} 40`} />
+        <path d={`M${x(3)} 45c${d * 3} 1.5 ${d * 6} 1.5 ${d * 8} 0`} />
+        <path d={`M${x(-14)} 30c${-d * 3} 1 ${-d * 3} 7 0 8`} />
+        <path d={`M${x(-12)} 9c${d * 8} -5 ${d * 20} -5 ${d * 26} 1`} />
+        <path d={`M${x(10)} 6l${d * 4} 4l${-d * 5} 2`} />
+      </svg>
+    );
+  }
   return (
-    <svg aria-hidden viewBox="0 0 64 64" className="h-16 w-16" fill="none" stroke="#141414" strokeWidth="1.5">
-      <g transform={guide === "down" ? "translate(0 6) rotate(0)" : `rotate(${rot} 32 32)`}>
-        <ellipse cx="32" cy="32" rx="16" ry="20" />
-        {guide === "down" ? (
-          <path d="M18 26c4-8 24-8 28 0" />
-        ) : (
-          <>
-            <circle cx="26" cy="30" r="1.5" fill="#141414" />
-            <circle cx="38" cy="30" r="1.5" fill="#141414" />
-            <path d="M27 40c3 2 7 2 10 0" />
-          </>
-        )}
-      </g>
+    <svg aria-hidden viewBox="0 0 80 64" className="h-16 w-20" fill="none" stroke={ink} strokeWidth="1.5">
+      <ellipse cx="40" cy="34" rx="15" ry="19" />
+      <circle cx="34" cy="31" r="1.4" fill={ink} />
+      <circle cx="46" cy="31" r="1.4" fill={ink} />
+      <path d="M40 33v6h-2M35 45c3 2 7 2 10 0" />
     </svg>
   );
 }
