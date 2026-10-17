@@ -1,0 +1,362 @@
+[
+ {
+  "id": "all_buzz_cut",
+  "title": "Buzz Cut",
+  "group": "m",
+  "length": 1,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/9e1bbc56-f235-4609-beb3-213e91c0f984/1770091124492/file.jpg"
+ },
+ {
+  "id": "all_crewcut",
+  "title": "Crewcut",
+  "group": "m",
+  "length": 1,
+  "texture": "straight",
+  "colorChange": true,
+  "thumb": "https://app-cdn.makeupar.com/cms/9771949d-a29c-4ae8-8e0a-aea5d83b28b6/1774947461596/file.jpg"
+ },
+ {
+  "id": "male_textured_crop",
+  "title": "Textured Crop",
+  "group": "m",
+  "length": 1,
+  "texture": "straight",
+  "colorChange": true,
+  "thumb": "https://app-cdn.makeupar.com/cms/430a5763-f41c-4ea6-a9c8-7c64b9b3b942/1778665908784/file.jpg"
+ },
+ {
+  "id": "all_messy_tapered_fade",
+  "title": "Messy Tapered Fade",
+  "group": "m",
+  "length": 1,
+  "texture": "straight",
+  "colorChange": true,
+  "thumb": "https://app-cdn.makeupar.com/cms/619e705a-beb9-4ebf-98d8-a59168df6c7e/1775122911642/file.jpg"
+ },
+ {
+  "id": "all_side_swept_undercut",
+  "title": "Side-Swept Undercut",
+  "group": "m",
+  "length": 1,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/b7554bb7-a51e-413c-89c3-e36e71df51bc/1770086982870/file.jpg"
+ },
+ {
+  "id": "male_gray_taper_fade",
+  "title": "Gray Taper Fade",
+  "group": "m",
+  "length": 1,
+  "texture": "straight",
+  "colorChange": true,
+  "thumb": "https://app-cdn.makeupar.com/cms/02a90e43-398a-4eda-b0bc-e9595d75430f/1778825209411/file.jpg"
+ },
+ {
+  "id": "male_textured_comma",
+  "title": "Textured Comma",
+  "group": "m",
+  "length": 2,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/ceea0fd7-a766-4d39-a067-625f4638954c/1778825131587/file.jpg"
+ },
+ {
+  "id": "male_tousled_cut",
+  "title": "Tousled Cut",
+  "group": "m",
+  "length": 2,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/e7912a84-747b-4ac2-93db-cf26179d319c/1773989170905/file.jpg"
+ },
+ {
+  "id": "male_wavy_undercut",
+  "title": "Wavy Undercut",
+  "group": "m",
+  "length": 2,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/f9bb06a7-fd1b-42ae-938d-275f3fde65cc/1770112938420/file.jpg"
+ },
+ {
+  "id": "male_short_curly",
+  "title": "Short Curly",
+  "group": "m",
+  "length": 2,
+  "texture": "curly",
+  "colorChange": true,
+  "thumb": "https://app-cdn.makeupar.com/cms/47633eff-2086-4791-b454-825aa6f9e160/1780481384535/file.jpg"
+ },
+ {
+  "id": "male_afro",
+  "title": "Afro",
+  "group": "m",
+  "length": 2,
+  "texture": "coily",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/59db293e-2053-4c7a-90a1-70781e8b7949/1778750239189/file.jpg"
+ },
+ {
+  "id": "all_tousled_waves",
+  "title": "Tousled Waves",
+  "group": "m",
+  "length": 3,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/5f7c2a40-03e5-4ec1-8df4-74a7c1f5eecc/1775100852986/file.jpg"
+ },
+ {
+  "id": "all_hippie_wave",
+  "title": "Hippie Wave",
+  "group": "m",
+  "length": 4,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/52e611d2-3b52-4a1d-9c86-7e35ab53d0f4/1770006588603/file.jpg"
+ },
+ {
+  "id": "all_dreadlocks",
+  "title": "Dreadlocks",
+  "group": "m",
+  "length": 4,
+  "texture": "locs",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/ee789d47-c009-4bde-b585-5cb76dc02576/1774603196507/file.jpg"
+ },
+ {
+  "id": "all_pixie",
+  "title": "Pixie",
+  "group": "f",
+  "length": 1,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/66060d01-0427-4bdd-8942-5bca565cfcbd/1775101460877/file.jpg"
+ },
+ {
+  "id": "all_bixie_cut",
+  "title": "Bixie Cut",
+  "group": "f",
+  "length": 2,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/1984ae3e-b53a-4437-b05c-52d53f7691e7/1773312166554/file.jpg"
+ },
+ {
+  "id": "female_blunt_bob",
+  "title": "Blunt Bob",
+  "group": "f",
+  "length": 3,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/9bc19ca5-2e6d-4816-8dc3-a6a1daf6593d/1781145851280/file.jpg"
+ },
+ {
+  "id": "all_short_bob",
+  "title": "Short Bob",
+  "group": "f",
+  "length": 3,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/d098f031-6a16-41ae-9f61-6ac2f943ba61/1775101570916/file.jpg"
+ },
+ {
+  "id": "all_french_bob",
+  "title": "French Bob",
+  "group": "f",
+  "length": 3,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/3ec08a45-89a4-4855-a51e-144caa2870a3/1770091312495/file.jpg"
+ },
+ {
+  "id": "all_wolf_cut",
+  "title": "Wolf Cut",
+  "group": "f",
+  "length": 3,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/bbb40a9e-7113-4428-83b0-86b8d832cbb5/1771829230119/file.jpg"
+ },
+ {
+  "id": "female_bobcut_wavy",
+  "title": "Bobcut Wavy",
+  "group": "f",
+  "length": 3,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/faffd75d-bad1-4bea-8f35-107077372911/1770198811895/file.jpg"
+ },
+ {
+  "id": "all_classic_hollywood_waves",
+  "title": "Classic Hollywood Waves",
+  "group": "f",
+  "length": 3,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/d288812e-638e-4622-8a05-dcc967e58e6e/1770880858767/file.jpg"
+ },
+ {
+  "id": "female_bobcut_curly",
+  "title": "Bobcut Curly",
+  "group": "f",
+  "length": 3,
+  "texture": "curly",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/e4f56b76-d492-45a6-a992-e5d7e800ede6/1770174109275/file.jpg"
+ },
+ {
+  "id": "female_afro",
+  "title": "Afro",
+  "group": "f",
+  "length": 3,
+  "texture": "coily",
+  "colorChange": true,
+  "thumb": "https://app-cdn.makeupar.com/cms/bceafb66-3743-42c1-989f-842a480fe93e/1778749474456/file.jpg"
+ },
+ {
+  "id": "female_medium_straight",
+  "title": "Medium Straight",
+  "group": "f",
+  "length": 4,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/85e1151e-a616-4cdc-8ace-204033e347d7/1770174183367/file.jpg"
+ },
+ {
+  "id": "all_hush_cut",
+  "title": "Hush Cut",
+  "group": "f",
+  "length": 4,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/ac74e18d-30d1-4f49-9134-e2dee0baed8f/1771829255242/file.jpg"
+ },
+ {
+  "id": "all_goddess_waves",
+  "title": "Goddess Waves",
+  "group": "f",
+  "length": 4,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/a6339fb0-03f8-4cd3-8ba9-d85895b4ddfd/1776757568161/file.jpg"
+ },
+ {
+  "id": "all_curtain_wavy",
+  "title": "Curtain Wavy",
+  "group": "f",
+  "length": 4,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/05699388-d710-4bdf-8460-c79f6bd4c641/1775120328122/file.jpg"
+ },
+ {
+  "id": "female_long_straight",
+  "title": "Long Straight",
+  "group": "f",
+  "length": 5,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/e9dae350-1313-46a2-9cad-1f94988da1e2/1770194631310/file.jpg"
+ },
+ {
+  "id": "female_sleek_middle_part",
+  "title": "Sleek Middle Part",
+  "group": "f",
+  "length": 5,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/658e8776-fdd0-4d78-8f35-1bbe27e902d4/1780543845278/file.jpg"
+ },
+ {
+  "id": "all_hime_cut",
+  "title": "Hime Cut",
+  "group": "f",
+  "length": 5,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/a7c647f9-2a83-401a-8051-4871b6296eb8/1773305799124/file.jpg"
+ },
+ {
+  "id": "all_face_framing_shag_cut",
+  "title": "Face Framing Shag Cut",
+  "group": "f",
+  "length": 5,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/2ead8fe5-76f3-4233-94f2-98684a3f9d41/1770007724171/file.jpg"
+ },
+ {
+  "id": "female_dark_c_curl_layers",
+  "title": "Dark C-Curl Layers",
+  "group": "f",
+  "length": 5,
+  "texture": "straight",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/c0678f27-af7f-4f1b-902a-cbb22be12a0f/1778825368023/file.jpg"
+ },
+ {
+  "id": "female_long_wavy",
+  "title": "Long Wavy",
+  "group": "f",
+  "length": 5,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/f7a7ff02-2988-4729-bdde-a52ac978ede7/1770112816917/file.jpg"
+ },
+ {
+  "id": "all_beachy",
+  "title": "Beachy",
+  "group": "f",
+  "length": 5,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/3ae8d2f5-791c-4879-8c8e-a158fae561a3/1773312098152/file.jpg"
+ },
+ {
+  "id": "all_loose_waves",
+  "title": "Loose Waves",
+  "group": "f",
+  "length": 5,
+  "texture": "wavy",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/092c4759-b384-4502-8de4-62f2a8437074/1773303942050/file.jpg"
+ },
+ {
+  "id": "all_blonde_balayage",
+  "title": "Blonde Balayage",
+  "group": "f",
+  "length": 5,
+  "texture": "wavy",
+  "colorChange": true,
+  "thumb": "https://app-cdn.makeupar.com/cms/9e7589a4-57ab-4918-8faa-a447bb11b547/1775123057470/file.jpg"
+ },
+ {
+  "id": "all_honey_highlight",
+  "title": "Honey Highlight",
+  "group": "f",
+  "length": 5,
+  "texture": "wavy",
+  "colorChange": true,
+  "thumb": "https://app-cdn.makeupar.com/cms/0e4b7049-32aa-474c-9782-bffe027eaece/1773386938309/file.jpg"
+ },
+ {
+  "id": "female_bouncy_curls",
+  "title": "Bouncy Curls",
+  "group": "f",
+  "length": 5,
+  "texture": "curly",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/f0f7cd99-88ef-4c4c-925d-b327649c6bcd/1780543784410/file.png"
+ },
+ {
+  "id": "female_long_spiral_curls",
+  "title": "Long Spiral Curls",
+  "group": "f",
+  "length": 5,
+  "texture": "curly",
+  "colorChange": false,
+  "thumb": "https://app-cdn.makeupar.com/cms/d8ebd3f0-503f-4ad3-baf6-11ba77b2d756/1775543705441/file.jpg"
+ }
+]

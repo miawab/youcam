@@ -1,0 +1,617 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import templatesJson from "@/data/templates.json";
+import Framer from "@/components/Framer";
+import { SALON, SERVICES, pkr } from "@/lib/catalog";
+import { LENGTH_NAMES, SKIN_BENEFITS, SKIN_LABEL, SKIN_SERVICE, effortLabel, planFor, skinPicks } from "@/lib/route";
+import { SAMPLE } from "@/lib/sample";
+import type { Analysis, Plan, SkinConcern, Template } from "@/lib/types";
+import { Compare, Meter, Source, Spinner, StepHead } from "./ui";
+
+const TEMPLATES = templatesJson as Template[];
+const TOTAL = 7;
+type Slot = "front" | "right" | "left" | "down";
+const SLOTS: { id: Slot; title: string; hint: string; optional?: boolean }[] = [
+  { id: "front", title: "Straight on", hint: "Look straight ahead, hair down" },
+  { id: "right", title: "Turn to your right", hint: "Turn your head about 45° to your right" },
+  { id: "left", title: "Turn to your left", hint: "Turn your head about 45° to your left" },
+  { id: "down", title: "Chin down", hint: "Tilt your head down so your hairline shows", optional: true },
+];
+type Stage = "intro" | "photos" | "reading" | "report" | "looks" | "plan" | "skin" | "after" | "book" | "done";
+
+export default function Flow({ embedded = false }: { embedded?: boolean }) {
+  const [stage, setStage] = useState<Stage>("intro");
+  const [mode, setMode] = useState<"live" | "sample">("sample");
+  const [liveReason, setLiveReason] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<Partial<Record<Slot, { blob?: Blob; url: string }>>>({});
+  const [slot, setSlot] = useState(0);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [group, setGroup] = useState<"f" | "m">("f");
+  const [look, setLook] = useState<Template | null>(null);
+  const [tryons, setTryons] = useState<Record<string, string>>({});
+  const [tryonBusy, setTryonBusy] = useState(false);
+  const [revealed, setRevealed] = useState(1);
+  const [picked, setPicked] = useState<Record<string, boolean>>({});
+  const [skinPicked, setSkinPicked] = useState<Record<string, boolean>>({});
+  const [after, setAfter] = useState<string | null>(null);
+  const [afterBusy, setAfterBusy] = useState(false);
+  const [skinSimulated, setSkinSimulated] = useState(false);
+  const [booking, setBooking] = useState({ day: 0, time: "", name: "", phone: "" });
+
+  useEffect(() => {
+    fetch("/api/status")
+      .then((r) => r.json())
+      .then((s) => {
+        if (s.live) setMode("live");
+        else setLiveReason(s.reason ?? null);
+      })
+      .catch(() => setLiveReason("Offline"));
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [stage]);
+
+  const plan: Plan | null = useMemo(() => (analysis && look ? planFor(analysis, look) : null), [analysis, look]);
+  const skinList = useMemo(() => (analysis?.skin ? skinPicks(analysis.skin.scores) : []), [analysis]);
+
+  function startSample() {
+    setMode("sample");
+    setPhotos({ front: { url: SAMPLE.photos.front }, right: { url: SAMPLE.photos.right }, left: { url: SAMPLE.photos.left } });
+    setAnalysis(SAMPLE.analysis);
+    setTryons(SAMPLE.tryons);
+    setGroup("f");
+    setStage("reading");
+    setTimeout(() => setStage("report"), 2600);
+  }
+
+  async function analyse() {
+    setStage("reading");
+    setError(null);
+    const fd = new FormData();
+    for (const s of SLOTS) if (photos[s.id]?.blob) fd.append(s.id, photos[s.id]!.blob!, `${s.id}.jpg`);
+    try {
+      const r = await fetch("/api/analyze", { method: "POST", body: fd });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.reason || d.error || "Analysis failed");
+      setAnalysis(d);
+      setStage("report");
+    } catch (e) {
+      setError((e as Error).message);
+      setStage("photos");
+    }
+  }
+
+  async function chooseLook(t: Template) {
+    setLook(t);
+    setRevealed(1);
+    setPicked({});
+    setAfter(null);
+    setStage("plan");
+    if (tryons[t.id] || mode !== "live" || !analysis?.frontFileId) return;
+    setTryonBusy(true);
+    try {
+      const r = await fetch("/api/tryon", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileId: analysis.frontFileId, templateId: t.id }) });
+      const d = await r.json();
+      if (d.url) setTryons((m) => ({ ...m, [t.id]: d.url }));
+    } finally {
+      setTryonBusy(false);
+    }
+  }
+
+  const steps = plan?.steps ?? [];
+  const isOn = (svc: string, required: boolean) => picked[svc] ?? required;
+  const chosenHair = steps.filter((s) => isOn(s.service, s.required));
+  const chosenSkin = skinList.filter(([c]) => skinPicked[c]);
+  const cart = [...chosenHair.map((s) => SERVICES[s.service]), ...chosenSkin.map(([c]) => SERVICES[SKIN_SERVICE[c]])];
+  const total = cart.reduce((s, x) => s + x.price, 0);
+  const minutes = cart.reduce((s, x) => s + x.minutes, 0);
+  const tryonUrl = look ? tryons[look.id] : undefined;
+
+  async function makeAfter() {
+    setStage("after");
+    setSkinSimulated(false);
+    if (!look) return;
+    if (chosenSkin.length === 0) {
+      setAfter(tryonUrl ?? null);
+      return;
+    }
+    if (mode === "sample") {
+      setAfter(SAMPLE.after[look.id] ?? tryonUrl ?? null);
+      setSkinSimulated(!!SAMPLE.after[look.id]);
+      return;
+    }
+    if (!tryonUrl) return;
+    setAfterBusy(true);
+    try {
+      const r = await fetch("/api/after", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageUrl: tryonUrl, concerns: chosenSkin.map(([c]) => c) }) });
+      const d = await r.json();
+      setAfter(d.url ?? tryonUrl);
+      setSkinSimulated(!!d.url);
+    } finally {
+      setAfterBusy(false);
+    }
+  }
+
+  const front = photos.front?.url;
+
+  return (
+    <div className={embedded ? "px-5 py-8" : "mx-auto max-w-5xl px-5 py-10 sm:py-14"}>
+      {stage === "intro" && (
+        <section className="rise grid gap-10 md:grid-cols-2 md:items-center">
+          <div>
+            <div className="label text-muted">{SALON.name} consultation</div>
+            <h1 className="mt-3 text-4xl font-medium leading-[1.05] tracking-tight sm:text-5xl">See the look. Know the route.</h1>
+            <p className="mt-4 max-w-md text-muted">
+              Four photos. YouCam AI reads your hair texture, frizz, length and skin, shows you any look on your own face, then lays out every service it takes to get there, with prices and timing.
+            </p>
+            <ul className="mt-6 space-y-2 text-sm">
+              <li>2 minutes. Nothing is booked until you confirm.</li>
+              <li>We tell you when a look isn&apos;t possible, and when a treatment won&apos;t help.</li>
+            </ul>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button className="btn btn-solid" disabled={mode !== "live"} onClick={() => setStage("photos")}>
+                Start with my photos
+              </button>
+              <button className="btn btn-line" onClick={startSample}>
+                Try a sample customer
+              </button>
+            </div>
+            {mode !== "live" && (
+              <p className="mt-3 text-xs text-muted">Live analysis is paused{liveReason ? ` (${liveReason.toLowerCase()})` : ""}. The sample customer uses real saved YouCam results.</p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <img src={SAMPLE.photos.front} alt="Sample customer before" className="aspect-[4/5] w-full object-cover" />
+            <img src={SAMPLE.tryons.female_long_straight} alt="Sample customer with a straight look" className="aspect-[4/5] w-full object-cover" />
+            <div className="label col-span-2 text-muted">Sample: curly to sleek straight, 2 services, 1 visit</div>
+          </div>
+        </section>
+      )}
+
+      {stage === "photos" && (
+        <section className="rise">
+          <StepHead n={1} total={TOTAL} title={SLOTS[slot].title} sub="Three angles let YouCam read your curl pattern and frizz. The chin-down photo lets it look at your hairline." />
+          <div className="mb-6 flex gap-2">
+            {SLOTS.map((s, i) => (
+              <button key={s.id} onClick={() => setSlot(i)} className={`relative aspect-[4/5] w-16 overflow-hidden border ${i === slot ? "border-ink" : "border-line"} bg-tile`}>
+                {photos[s.id] ? <img src={photos[s.id]!.url} alt="" className="h-full w-full object-cover" /> : <span className="label absolute inset-0 flex items-center justify-center text-[10px] text-muted">{i + 1}</span>}
+              </button>
+            ))}
+          </div>
+          <Framer
+            key={SLOTS[slot].id}
+            guide={SLOTS[slot].id}
+            hint={SLOTS[slot].hint}
+            onCapture={(blob) => {
+              setPhotos((p) => ({ ...p, [SLOTS[slot].id]: { blob, url: URL.createObjectURL(blob) } }));
+              if (slot < SLOTS.length - 1) setSlot(slot + 1);
+            }}
+          />
+          {error && <p className="mt-4 text-center text-sm text-warn">{error}</p>}
+          <div className="mt-8 flex justify-center gap-3">
+            {SLOTS[slot].optional && !photos[SLOTS[slot].id] && photos.front && (
+              <button className="btn btn-line" onClick={analyse}>
+                Skip this one
+              </button>
+            )}
+            <button className="btn btn-solid" disabled={!photos.front || !photos.right || !photos.left} onClick={analyse}>
+              Read my hair &amp; skin
+            </button>
+          </div>
+        </section>
+      )}
+
+      {stage === "reading" && (
+        <section className="rise mx-auto max-w-md py-16">
+          <StepHead n={2} total={TOTAL} title="Reading your photos" />
+          <div className="space-y-4">
+            {["Hair type from 3 angles", "Frizz", "Length", "Hairline density", "Skin: breakouts, texture, under-eyes, radiance"].map((t, i) => (
+              <div key={t} className="rise flex items-center justify-between border-b border-line pb-3" style={{ animationDelay: `${i * 0.25}s` }}>
+                <span>{t}</span>
+                <span className="pulse label text-muted">YouCam</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {stage === "report" && analysis && (
+        <section className="rise">
+          <StepHead n={3} total={TOTAL} title="Here's what we see" sub="Every number below comes from a YouCam AI model, not from us." />
+          <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+            {front && <img src={front} alt="Your photo" className="aspect-[4/5] w-full object-cover" />}
+            <div className="grid gap-px bg-line sm:grid-cols-2">
+              <Card title="Hair type" missing={analysis.missing.type}>
+                {analysis.hair.type && (
+                  <>
+                    <div className="text-2xl font-medium">{analysis.hair.type.term}</div>
+                    <div className="text-sm text-muted">Pattern {analysis.hair.type.mapping}</div>
+                  </>
+                )}
+              </Card>
+              <Card title="Frizz" missing={analysis.missing.frizz}>
+                {analysis.hair.frizz && (
+                  <>
+                    <div className="text-2xl font-medium">{analysis.hair.frizz.term}</div>
+                    <div className="mt-3">
+                      <Meter value={analysis.hair.frizz.level} max={3} />
+                    </div>
+                  </>
+                )}
+              </Card>
+              <Card title="Length" missing={analysis.missing.length}>
+                {analysis.hair.length && (
+                  <>
+                    <div className="text-2xl font-medium">{LENGTH_NAMES[analysis.hair.length.level]}</div>
+                    <div className="mt-3 flex gap-1">
+                      {[1, 2, 3, 4, 5].map((l) => (
+                        <div key={l} className={`h-1.5 flex-1 ${l <= analysis.hair.length!.level ? "bg-ink" : "bg-line"}`} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </Card>
+              <Card title="Hairline density" missing={analysis.missing.density}>
+                {analysis.hair.density && (
+                  <>
+                    <div className="text-2xl font-medium">{analysis.hair.density.term}</div>
+                    <div className="text-sm text-muted">A rough read from one photo. Not a diagnosis.</div>
+                  </>
+                )}
+              </Card>
+              <div className="bg-paper p-5 sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <span className="label">Skin</span>
+                  {analysis.skin?.skinAge && <span className="text-sm text-muted">Skin age estimate: {analysis.skin.skinAge}</span>}
+                </div>
+                {analysis.skin ? (
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {(Object.entries(analysis.skin.scores) as [SkinConcern, number][]).map(([c, s]) => (
+                      <div key={c}>
+                        <div className="mb-1 flex justify-between text-sm">
+                          <span>{SKIN_LABEL[c]}</span>
+                          <span className="tabular-nums">{s}/100</span>
+                        </div>
+                        <Meter value={s} tone={s >= 85 ? "accent" : "ink"} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-muted">Not measured: {analysis.missing.skin}</p>
+                )}
+                <p className="mt-4 text-xs text-muted">Higher is better. 85+ is YouCam&apos;s excellent band.</p>
+              </div>
+            </div>
+          </div>
+          <Limits />
+          <div className="mt-8 flex justify-end">
+            <button className="btn btn-solid" onClick={() => setStage("looks")}>
+              Choose a look
+            </button>
+          </div>
+        </section>
+      )}
+
+      {stage === "looks" && analysis && (
+        <section className="rise">
+          <StepHead n={4} total={TOTAL} title="Pick a look" sub="Under each look: what it takes to get there from your hair today." />
+          <div className="mb-6 flex gap-2">
+            {(["f", "m"] as const).map((g) => (
+              <button key={g} className={`btn ${group === g ? "btn-solid" : "btn-line"}`} onClick={() => setGroup(g)}>
+                {g === "f" ? "Women" : "Men"}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
+            {TEMPLATES.filter((t) => t.group === group).map((t) => {
+              const p = planFor(analysis, t);
+              const ready = !!tryons[t.id];
+              return (
+                <button key={t.id} onClick={() => chooseLook(t)} className="group text-left">
+                  <div className="relative overflow-hidden bg-tile">
+                    <img src={ready ? tryons[t.id] : t.thumb} alt={t.title} className="aspect-[4/5] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+                    {ready && <span className="label absolute left-2 top-2 bg-paper px-2 py-1 text-[10px]">On you</span>}
+                  </div>
+                  <div className="mt-2 text-sm font-medium">{t.title}</div>
+                  <div className={`text-xs ${p.feasible ? "text-muted" : "text-warn"}`}>{effortLabel(p)}</div>
+                </button>
+              );
+            })}
+          </div>
+          {mode === "sample" && <p className="mt-6 text-xs text-muted">Sample mode: three looks have saved YouCam try-ons. Every look still gets a full plan.</p>}
+        </section>
+      )}
+
+      {stage === "plan" && analysis && look && plan && (
+        <section className="rise">
+          <StepHead n={5} total={TOTAL} title={look.title} sub="Recommendations come one at a time. Add what you want, skip what you don't." />
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_1fr]">
+            <div className="lg:sticky lg:top-24 lg:self-start">
+              {tryonUrl && front ? (
+                <Compare before={front} after={tryonUrl} />
+              ) : tryonBusy ? (
+                <div className="flex aspect-[4/5] items-center justify-center bg-tile">
+                  <Spinner text="YouCam is putting the look on you" />
+                </div>
+              ) : (
+                <div className="relative">
+                  <img src={look.thumb} alt={look.title} className="aspect-[4/5] w-full object-cover opacity-90" />
+                  <span className="label absolute left-3 top-3 bg-paper px-2 py-1">Reference look</span>
+                </div>
+              )}
+              {look.colorChange && <p className="mt-2 text-xs text-muted">This look changes hair colour too, so the colour service is part of the plan.</p>}
+            </div>
+            <div>
+              {!plan.feasible && <div className="mb-4 border border-warn p-4 text-sm text-warn">Heads up: this look isn&apos;t fully possible from your hair. Details below.</div>}
+              <ol className="space-y-3">
+                {steps.slice(0, revealed).map((s, i) => {
+                  const svc = SERVICES[s.service];
+                  const on = isOn(s.service, s.required);
+                  return (
+                    <li key={s.service} className={`rise border p-5 ${on ? "border-ink" : "border-line"}`}>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <div className="label text-muted">
+                            {i + 1}. {s.required ? "Needed for this look" : "Recommended"}
+                            {plan.visits.length > 1 ? `, visit ${s.visit}` : ""}
+                          </div>
+                          <div className="mt-1 text-lg font-medium">{svc.name}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="tabular-nums">{pkr(svc.price)}</div>
+                          <div className="text-xs text-muted">{svc.minutes} min</div>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-sm">{s.why}</p>
+                      {!s.visible && s.benefits && (
+                        <div className="mt-3 bg-tile p-3 text-sm">
+                          <div className="label mb-1 text-muted">You won&apos;t see this in a photo. What it does:</div>
+                          <ul className="list-inside list-disc space-y-0.5">
+                            {s.benefits.map((b) => (
+                              <li key={b}>{b}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                        <Source kind={s.source} />
+                        <div className="flex gap-2">
+                          <button className={`btn ${on ? "btn-solid" : "btn-line"} min-h-9 px-4`} onClick={() => setPicked((p) => ({ ...p, [s.service]: true }))}>
+                            {on ? "Added" : "Add"}
+                          </button>
+                          <button className={`btn ${!on ? "btn-solid" : "btn-line"} min-h-9 px-4`} onClick={() => setPicked((p) => ({ ...p, [s.service]: false }))}>
+                            Skip
+                          </button>
+                        </div>
+                      </div>
+                      {s.required && !on && <p className="mt-2 text-xs text-warn">Without this, you won&apos;t get the look in the preview.</p>}
+                    </li>
+                  );
+                })}
+              </ol>
+              {revealed < steps.length ? (
+                <button className="btn btn-line mt-4 w-full" onClick={() => setRevealed(revealed + 1)}>
+                  Next recommendation ({steps.length - revealed} left)
+                </button>
+              ) : (
+                <>
+                  {(plan.notes.length > 0 || plan.growMonths) && (
+                    <div className="rise mt-6 border-t border-line pt-4">
+                      <div className="label mb-2">Straight talk</div>
+                      <ul className="space-y-2 text-sm">
+                        {plan.notes.map((n) => (
+                          <li key={n}>{n}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <div className="rise mt-6 flex items-center justify-between border-t border-line pt-4">
+                    <div>
+                      <div className="label text-muted">Hair so far</div>
+                      <div className="text-2xl font-medium tabular-nums">{pkr(chosenHair.reduce((s, x) => s + SERVICES[x.service].price, 0))}</div>
+                      <div className="text-xs text-muted">{plan.visits.map((v) => v.when).join(", then ")}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="btn btn-line" onClick={() => setStage("looks")}>
+                        Other looks
+                      </button>
+                      <button className="btn btn-solid" onClick={() => setStage("skin")}>
+                        Next: skin
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {stage === "skin" && analysis && (
+        <section className="rise">
+          <StepHead n={6} total={TOTAL} title="And your skin" sub="From the same front photo. We only suggest a facial where YouCam scored you below 85." />
+          {skinList.length === 0 ? (
+            <div className="border border-line p-6">
+              <div className="text-xl font-medium">{analysis.skin ? "Your skin scored well. No facial needed." : "We couldn't read your skin this time."}</div>
+              <p className="mt-2 text-sm text-muted">{analysis.skin ? "We'd rather tell you that than sell you one." : analysis.missing.skin}</p>
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {skinList.map(([c, score]) => {
+                const svc = SERVICES[SKIN_SERVICE[c]];
+                const on = !!skinPicked[c];
+                return (
+                  <div key={c} className={`rise border p-5 ${on ? "border-ink" : "border-line"}`}>
+                    <div className="flex justify-between">
+                      <span className="label text-muted">{SKIN_LABEL[c]}</span>
+                      <span className="text-sm tabular-nums">{score}/100</span>
+                    </div>
+                    <div className="mt-2">
+                      <Meter value={score} />
+                    </div>
+                    <div className="mt-4 flex items-baseline justify-between">
+                      <div className="text-lg font-medium">{svc.name}</div>
+                      <div className="tabular-nums">{pkr(svc.price)}</div>
+                    </div>
+                    <ul className="mt-2 list-inside list-disc text-sm">
+                      {SKIN_BENEFITS[c].map((b) => (
+                        <li key={b}>{b}</li>
+                      ))}
+                    </ul>
+                    <div className="mt-4 flex items-center justify-between">
+                      <Source kind="youcam" />
+                      <div className="flex gap-2">
+                        <button className={`btn ${on ? "btn-solid" : "btn-line"} min-h-9 px-4`} onClick={() => setSkinPicked((p) => ({ ...p, [c]: true }))}>
+                          {on ? "Added" : "Add"}
+                        </button>
+                        <button className={`btn ${!on ? "btn-solid" : "btn-line"} min-h-9 px-4`} onClick={() => setSkinPicked((p) => ({ ...p, [c]: false }))}>
+                          Skip
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className="mt-8 flex justify-between">
+            <button className="btn btn-line" onClick={() => setStage("plan")}>
+              Back
+            </button>
+            <button className="btn btn-solid" onClick={makeAfter}>
+              See me after everything
+            </button>
+          </div>
+        </section>
+      )}
+
+      {stage === "after" && look && (
+        <section className="rise">
+          <StepHead n={7} total={TOTAL} title="You, after everything" sub={
+              skinSimulated
+                ? "The new look, plus YouCam's skin simulation of the treatments you added."
+                : chosenSkin.length && mode === "sample"
+                  ? "The new look on you. In sample mode the skin simulation is saved for the Long Straight look only."
+                  : "The new look on you."
+            } />
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_1fr]">
+            <div>
+              {afterBusy ? (
+                <div className="flex aspect-[4/5] items-center justify-center bg-tile">
+                  <Spinner text="YouCam is simulating your skin after treatment" />
+                </div>
+              ) : after && front ? (
+                <Compare before={front} after={after} labels={["Today", "After"]} />
+              ) : (
+                <div className="flex aspect-[4/5] items-center justify-center bg-tile p-6 text-center text-sm text-muted">The full preview needs live mode for this look. Your plan below is still complete.</div>
+              )}
+              <p className="mt-2 text-xs text-muted">A preview, not a promise. Real results depend on your hair and your stylist.</p>
+            </div>
+            <div>
+              <div className="label mb-3">Your plan at {SALON.name}</div>
+              <ul className="divide-y divide-line border-y border-line">
+                {cart.map((s) => (
+                  <li key={s.id} className="flex justify-between py-3 text-sm">
+                    <span>{s.name}</span>
+                    <span className="tabular-nums">{pkr(s.price)}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 flex items-baseline justify-between">
+                <span className="label">Total</span>
+                <span className="text-3xl font-medium tabular-nums">{pkr(total)}</span>
+              </div>
+              <div className="mt-1 text-right text-xs text-muted">
+                About {Math.round(minutes / 60)} h in the chair{plan && plan.visits.length > 1 ? " over 2 visits" : ""}. {SALON.note}
+              </div>
+              <div className="mt-8 flex flex-wrap justify-end gap-2">
+                <button className="btn btn-line" onClick={() => setStage("skin")}>
+                  Change
+                </button>
+                <button className="btn btn-solid" disabled={cart.length === 0} onClick={() => setStage("book")}>
+                  Book all of it
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {stage === "book" && (
+        <section className="rise mx-auto max-w-xl">
+          <div className="label text-muted">Almost done</div>
+          <h2 className="mt-2 text-3xl font-medium tracking-tight">Pick a time</h2>
+          <div className="mt-6 grid grid-cols-4 gap-2 sm:grid-cols-7">
+            {Array.from({ length: 7 }, (_, i) => {
+              const d = new Date(Date.now() + (i + 1) * 86400000);
+              return (
+                <button key={i} className={`border p-2 text-center ${booking.day === i ? "border-ink bg-ink text-paper" : "border-line"}`} onClick={() => setBooking({ ...booking, day: i })}>
+                  <div className="label text-[10px]">{d.toLocaleDateString("en", { weekday: "short" })}</div>
+                  <div className="text-lg">{d.getDate()}</div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {["11:00", "13:00", "15:30", "18:00"].map((t) => (
+              <button key={t} className={`btn ${booking.time === t ? "btn-solid" : "btn-line"} min-h-10`} onClick={() => setBooking({ ...booking, time: t })}>
+                {t}
+              </button>
+            ))}
+          </div>
+          <div className="mt-6 grid gap-3">
+            <input className="border border-line px-3 py-3 outline-none focus:border-ink" placeholder="Name" value={booking.name} onChange={(e) => setBooking({ ...booking, name: e.target.value })} />
+            <input className="border border-line px-3 py-3 outline-none focus:border-ink" placeholder="Phone (WhatsApp)" value={booking.phone} onChange={(e) => setBooking({ ...booking, phone: e.target.value })} />
+          </div>
+          <p className="mt-3 text-xs text-muted">{SALON.name} is a demo salon: nothing is sent anywhere.</p>
+          <button className="btn btn-solid mt-6 w-full" disabled={!booking.time || !booking.name} onClick={() => setStage("done")}>
+            Confirm booking, {pkr(total)}
+          </button>
+        </section>
+      )}
+
+      {stage === "done" && (
+        <section className="rise mx-auto max-w-xl py-10 text-center">
+          <div className="label text-accent">Booked (demo)</div>
+          <h2 className="mt-3 text-4xl font-medium tracking-tight">See you soon, {booking.name.split(" ")[0]}.</h2>
+          <p className="mt-3 text-muted">
+            {new Date(Date.now() + (booking.day + 1) * 86400000).toLocaleDateString("en", { weekday: "long", day: "numeric", month: "long" })} at {booking.time}. Your stylist gets your photos, YouCam&apos;s readings and this plan before you arrive, so the consultation is already done.
+          </p>
+          {after && <img src={after} alt="Your look" className="mx-auto mt-8 aspect-[4/5] w-56 object-cover" />}
+          <button className="btn btn-line mt-8" onClick={() => location.reload()}>
+            Start over
+          </button>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function Card({ title, missing, children }: { title: string; missing?: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-paper p-5">
+      <div className="flex items-center justify-between">
+        <span className="label">{title}</span>
+        {!missing && <Source kind="youcam" />}
+      </div>
+      <div className="mt-3">{missing ? <p className="text-sm text-muted">Not measured: {missing.replaceAll("_", " ")}</p> : children}</div>
+    </div>
+  );
+}
+
+function Limits() {
+  return (
+    <details className="mt-6 border border-line p-5">
+      <summary className="label cursor-pointer">What a photo can&apos;t tell you</summary>
+      <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-muted">
+        <li>The back of your head, your crown and cowlicks. Your stylist checks those in person.</li>
+        <li>Hair loss. A density reading from a photo is a hint, not a diagnosis. See a dermatologist if you&apos;re shedding.</li>
+        <li>Past chemical treatments. Tell your stylist about any colour, perm or keratin in the last year.</li>
+        <li>Lighting changes skin scores. Daylight, facing a window, works best.</li>
+      </ul>
+    </details>
+  );
+}

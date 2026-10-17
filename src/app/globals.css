@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #141414;
+  --paper: #ffffff;
+  --tile: #f3f3f1;
+  --line: #e2e2df;
+  --muted: #6b6b68;
+  --accent: #2f5d4a;
+  --warn: #8a4b14;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-tile: var(--tile);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-warn: var(--warn);
+  --font-sans: var(--font-grotesk);
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-grotesk), Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 22px;
+  border: 1px solid var(--ink);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-solid { background: var(--ink); color: var(--paper); }
+.btn-solid:hover:not(:disabled) { background: #333; }
+.btn-line { background: var(--paper); color: var(--ink); }
+.btn-line:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.chip-yc { border-color: var(--accent); color: var(--accent); }
+.chip-rule { color: var(--muted); }
+
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.35s ease-out both; }
+
+@keyframes pulse-line { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+.pulse { animation: pulse-line 1.2s ease-in-out infinite; }
