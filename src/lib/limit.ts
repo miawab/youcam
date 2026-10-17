@@ -15,8 +15,12 @@ export const LIMITS = {
 
 const counters = new Map<string, { n: number; until: number }>();
 
+// RATE_LIMITS=off turns the counters off (for testing). Sessions are still required and the credit floor still applies.
+const off = () => process.env.RATE_LIMITS === "off";
+
 // Count one use of `key`, refusing once `max` is reached inside the window.
 export function take(key: string, max: number, windowMs: number): boolean {
+  if (off()) return true;
   const now = Date.now();
   const c = counters.get(key);
   const cur = c && c.until > now ? c : { n: 0, until: now + windowMs };
@@ -74,6 +78,7 @@ type Runs = { day: string; n: number };
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function runsFromCookie(req: Request): number {
+  if (off()) return 0;
   const raw = req.headers.get("cookie")?.match(/(?:^|;\s*)cs_runs=([^;]+)/)?.[1];
   const r = open<Runs>(raw ? decodeURIComponent(raw) : null);
   return r && r.day === today() ? r.n : 0;
