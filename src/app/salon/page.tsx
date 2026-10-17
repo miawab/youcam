@@ -48,7 +48,7 @@ export default function SalonPage() {
                 {ids.map((id) => (
                   <li key={id} className="flex justify-between gap-4 border-b border-[#1d1b18]/10 pb-2">
                     <span>{SERVICES[id].name}</span>
-                    <span className="tabular-nums">{pkr(SERVICES[id].price)}</span>
+                    <span className="whitespace-nowrap tabular-nums">{pkr(SERVICES[id].price)}</span>
                   </li>
                 ))}
               </ul>

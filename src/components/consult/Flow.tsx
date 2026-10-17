@@ -202,7 +202,7 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
               <li>2 minutes. Nothing is booked until you confirm.</li>
               <li>We tell you when a look isn&apos;t possible, and when a treatment won&apos;t help.</li>
             </ul>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="actions mt-8 flex flex-wrap gap-3">
               <button className="btn btn-solid" disabled={mode !== "live"} onClick={() => go("photos")}>
                 Start with my photos
               </button>
@@ -223,10 +223,10 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
       )}
 
       {stage === "photos" && (
-        <section className="rise grid gap-10 md:grid-cols-[1fr_380px]">
+        <section className="rise grid gap-8 md:grid-cols-[1fr_380px] md:grid-rows-[auto_1fr] md:gap-x-10">
           <div>
             <StepHead title={SLOTS[slot].title} sub="Three angles let YouCam read your curl pattern and frizz. The chin-down photo lets it look at your hairline." />
-            <div className="flex gap-2">
+            <div className="grid max-w-sm grid-cols-4 gap-2">
               {SLOTS.map((s, i) => (
                 <button
                   key={s.id}
@@ -235,21 +235,34 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
                   aria-current={i === slot ? "step" : undefined}
                   aria-label={`Photo ${i + 1}: ${s.title}, ${photos[s.id] ? "taken" : s.optional ? "optional" : "needed"}`}
                 >
-                  <div className={`relative aspect-[4/5] w-20 overflow-hidden bg-tile ${i === slot ? "border-2 border-ink" : "border border-line"}`}>
+                  <div className={`relative aspect-[4/5] w-full overflow-hidden bg-tile ${i === slot ? "border-2 border-ink" : "border border-line"}`}>
                     {photos[s.id] ? <img src={photos[s.id]!.url} alt="" className="h-full w-full object-cover" /> : <span className="label absolute inset-0 flex items-center justify-center text-muted">{i + 1}</span>}
                   </div>
                   <div className="label mt-1 text-muted">{s.optional ? "Optional" : photos[s.id] ? "Done" : "Needed"}</div>
                 </button>
               ))}
             </div>
-            <ul className="mt-8 space-y-3 border-t border-line pt-6">
-              <li><span className="label mr-2">Light</span>Face a window. Dark photos lower skin scores.</li>
-              <li><span className="label mr-2">Hair</span>Down and untied, the way you usually wear it.</li>
-              <li><span className="label mr-2">Frame</span>Fill the oval. Keep your head level unless asked to turn.</li>
-              <li><span className="label mr-2">Privacy</span>Photos go to YouCam for analysis. We don&apos;t store them; YouCam keeps results for 24 hours.</li>
+          </div>
+          <div className="md:col-start-2 md:row-span-2 md:row-start-1">
+            <Framer
+              key={SLOTS[slot].id}
+              guide={SLOTS[slot].id}
+              hint={SLOTS[slot].hint}
+              onCapture={(blob) => {
+                setPhotos((p) => ({ ...p, [SLOTS[slot].id]: { blob, url: URL.createObjectURL(blob) } }));
+                if (slot < SLOTS.length - 1) setSlot(slot + 1);
+              }}
+            />
+          </div>
+          <div>
+            <ul className="space-y-3 border-t border-line pt-6">
+              <li className="grid grid-cols-[80px_1fr] gap-2"><span className="label pt-0.5">Light</span>Face a window. Dark photos lower skin scores.</li>
+              <li className="grid grid-cols-[80px_1fr] gap-2"><span className="label pt-0.5">Hair</span>Down and untied, the way you usually wear it.</li>
+              <li className="grid grid-cols-[80px_1fr] gap-2"><span className="label pt-0.5">Frame</span>Fill the oval. Keep your head level unless asked to turn.</li>
+              <li className="grid grid-cols-[80px_1fr] gap-2"><span className="label pt-0.5">Privacy</span>Photos go to YouCam for analysis. We don&apos;t store them; YouCam keeps results for 24 hours.</li>
             </ul>
             {error && <p role="alert" className="mt-6 border border-warn p-3 text-warn">{error}</p>}
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="actions mt-8 flex flex-wrap gap-3">
               <button className="btn btn-solid" disabled={!photos.front || !photos.right || !photos.left} onClick={analyse}>
                 Read my hair &amp; skin
               </button>
@@ -260,15 +273,6 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
               )}
             </div>
           </div>
-          <Framer
-            key={SLOTS[slot].id}
-            guide={SLOTS[slot].id}
-            hint={SLOTS[slot].hint}
-            onCapture={(blob) => {
-              setPhotos((p) => ({ ...p, [SLOTS[slot].id]: { blob, url: URL.createObjectURL(blob) } }));
-              if (slot < SLOTS.length - 1) setSlot(slot + 1);
-            }}
-          />
         </section>
       )}
 
@@ -355,7 +359,7 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
             </div>
           </div>
           <Limits />
-          <div className="mt-8 flex flex-wrap justify-end gap-2">
+          <div className="actions-rev mt-8 flex flex-wrap justify-end gap-2">
             {mode === "live" && (analysis.missing.type || analysis.missing.length || analysis.missing.skin) && (
               <button className="btn btn-line" onClick={() => { setSlot(0); go("photos"); }}>
                 Retake photos
@@ -402,7 +406,7 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
         <section className="rise">
           <StepHead title={look.title} sub="Recommendations come one at a time. Add what you want, skip what you don't." />
           <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_1fr]">
-            <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="mx-auto w-full max-w-[300px] lg:sticky lg:top-24 lg:max-w-none lg:self-start">
               {tryonUrl && front ? (
                 <Compare before={front} after={tryonUrl} />
               ) : tryonBusy ? (
@@ -474,13 +478,13 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
                       </ul>
                     </div>
                   )}
-                  <div className="rise mt-6 flex items-center justify-between border-t border-line pt-4">
+                  <div className="rise mt-6 flex flex-col gap-4 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="label text-muted">Hair so far</div>
                       <div className="text-2xl font-medium tabular-nums">{pkr(chosenHair.reduce((s, x) => s + SERVICES[x.service].price, 0))}</div>
                       <div className="text-xs text-muted">{plan.visits.map((v) => v.when).join(", then ")}</div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="actions-rev flex gap-2">
                       <button className="btn btn-line" onClick={() => go("looks")}>
                         Other looks
                       </button>
@@ -536,7 +540,7 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
               })}
             </div>
           )}
-          <div className="mt-8 flex justify-end">
+          <div className="actions mt-8 flex justify-end">
             <button className="btn btn-solid" onClick={makeAfter}>
               See me after everything
             </button>
@@ -554,7 +558,7 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
                   : "The new look on you."
             } />
           <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_1fr]">
-            <div>
+            <div className="mx-auto w-full max-w-[300px] lg:max-w-none">
               {afterBusy ? (
                 <div className="flex aspect-[4/5] items-center justify-center bg-tile">
                   <Spinner text="YouCam is simulating your skin after treatment" />
@@ -583,7 +587,7 @@ export default function Flow({ embedded = false }: { embedded?: boolean }) {
               <div className="mt-1 text-right text-sm text-muted">
                 About {Math.round(minutes / 60)} h in the chair{plan && plan.visits.length > 1 ? " over 2 visits" : ""}. {SALON.note}
               </div>
-              <div className="mt-8 flex flex-wrap justify-end gap-2">
+              <div className="actions-rev mt-8 flex flex-wrap justify-end gap-2">
                 <button className="btn btn-line" onClick={() => go("plan")}>
                   Change services
                 </button>

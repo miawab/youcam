@@ -129,7 +129,7 @@ export default function Framer({ hint, onCapture, guide = "front" }: Props) {
       )}
       {img && <p className="mt-1 text-center text-sm text-muted">Drag and zoom until your face fills the oval.</p>}
 
-      <div className="mx-auto mt-4 flex max-w-[380px] flex-wrap justify-center gap-2">
+      <div className="mx-auto mt-4 flex max-w-[380px] gap-2 [&>*]:flex-1 [&>*]:px-3">
         {!live && (
           <button className="btn btn-line" onClick={startCamera} type="button">
             Use camera

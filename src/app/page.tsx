@@ -66,11 +66,11 @@ const STEP_VISUALS = [
       </div>
     ))}
   </dl>,
-  <div key="route" className="flex items-end gap-3">
+  <div key="route" className="flex flex-wrap items-end gap-3">
     <img src={SAMPLE.photos.front} alt="" className="aspect-[4/5] w-24 object-cover sm:w-28" />
     <div className="pb-10 text-2xl text-muted">→</div>
     <img src={SAMPLE.tryons.female_long_straight} alt="" className="aspect-[4/5] w-24 object-cover sm:w-28" />
-    <div className="ml-2 flex flex-col items-start gap-2 pb-1">
+    <div className="flex w-full flex-wrap gap-2 sm:ml-2 sm:w-auto sm:flex-col sm:items-start sm:pb-1">
       {["Cut", "Rebonding", "Bond repair"].map((s) => (
         <div key={s} className="chip">{s}</div>
       ))}
@@ -95,11 +95,11 @@ export default function Home() {
       <section className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.1fr_1fr] md:items-center md:py-20">
         <div>
           <div className="label text-muted">For salons and barbers</div>
-          <h1 className="mt-4 text-5xl font-medium leading-[1.02] tracking-tight sm:text-6xl">The consultation before the chair.</h1>
+          <h1 className="mt-4 text-[2.75rem] font-medium leading-[1.02] tracking-tight sm:text-6xl">The consultation before the chair.</h1>
           <p className="mt-6 max-w-lg text-xl text-muted">
             Customers try a look on their own face, and Chairside works out every service it takes to get there from their hair today. Then they book all of it. One line of code on your booking page.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="actions mt-8 flex flex-wrap gap-3">
             <Link href="/salon" className="btn btn-solid">
               See it on a salon site
             </Link>
@@ -108,7 +108,7 @@ export default function Home() {
             </Link>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <figure className="col-span-1">
             <img src={SAMPLE.photos.front} alt="Customer today" className="aspect-[4/5] w-full object-cover" />
             <figcaption className="label mt-2 text-muted">Today: 3A curls, frizzy</figcaption>
@@ -117,9 +117,9 @@ export default function Home() {
             <img src={SAMPLE.tryons.female_long_straight} alt="Straight look" className="aspect-[4/5] w-full object-cover" />
             <figcaption className="label mt-2 text-muted">Look: long straight</figcaption>
           </figure>
-          <div className="col-span-1 flex flex-col justify-between border border-ink p-4 text-sm">
+          <div className="col-span-2 flex flex-col justify-between gap-3 border border-ink p-4 text-sm sm:col-span-1">
             <div className="label">The route</div>
-            <ol className="space-y-2">
+            <ol className="flex flex-wrap gap-x-4 gap-y-2 sm:block sm:space-y-2">
               <li>1. Cut &amp; style</li>
               <li>2. Rebonding</li>
               <li>3. Bond repair</li>
@@ -146,9 +146,9 @@ export default function Home() {
           <div className="label text-muted">What it solves</div>
           <h2 className="mx-auto mt-4 max-w-2xl text-4xl font-medium leading-tight tracking-tight sm:text-5xl">Better for the person in the chair. Better for the people behind it.</h2>
         </div>
-        <div className="mt-16 grid gap-px bg-ink md:grid-cols-2">
+        <div className="mt-12 grid gap-px bg-ink sm:mt-16 md:grid-cols-2">
           {SOLVES.map(({ who, items }) => (
-            <div key={who} className="bg-paper p-8 sm:p-10">
+            <div key={who} className="bg-paper px-0 py-8 sm:p-10">
               <h3 className="label">{who}</h3>
               <ul className="mt-8 space-y-7">
                 {items.map(([t, d]) => (
@@ -173,8 +173,8 @@ export default function Home() {
         </div>
         <ol className="mt-16 border-t border-ink">
           {STEPS.map(([t, d], i) => (
-            <li key={t} className="grid gap-8 border-b border-line py-12 md:grid-cols-[110px_1fr_auto] md:items-center md:gap-12 md:py-16">
-              <div aria-hidden className="text-6xl font-light leading-none tracking-tight text-muted/40 md:text-7xl">{String(i + 1).padStart(2, "0")}</div>
+            <li key={t} className="grid gap-6 border-b border-line py-10 md:grid-cols-[110px_1fr_auto] md:items-center md:gap-12 md:py-16">
+              <div aria-hidden className="text-5xl sm:text-6xl font-light leading-none tracking-tight text-muted/40 md:text-7xl">{String(i + 1).padStart(2, "0")}</div>
               <div>
                 <h3 className="text-2xl font-medium tracking-tight sm:text-3xl">{t}</h3>
                 <p className="mt-4 max-w-md text-lg text-muted">{d}</p>
