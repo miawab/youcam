@@ -234,7 +234,7 @@ export default async function Home() {
           <Mark className="h-6 w-6" />
           <span className="label">Chairside</span>
         </div>
-        <p>Built for the YouCam API Skin AI &amp; eCommerce VTO Hackathon. {SAMPLE.credit}.</p>
+        <p>{SAMPLE.credit}.</p>
       </footer>
     </main>
   );

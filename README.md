@@ -2,8 +2,6 @@
 
 **The consultation before the chair.** A widget salons add to their booking page. Customers take four guided photos, YouCam AI reads their hair and skin, they try any of 40 looks on their own face, and Chairside lays out every service it takes to get there from their hair today: perm, rebonding, colour, months of growth, or "not possible". Recommendations come one at a time with the reason, invisible treatments show their benefits instead of a fake picture, and the customer sees themselves after everything before booking it all.
 
-Built for the YouCam API Skin AI & eCommerce VTO Hackathon (Devpost, 2026).
-
 ## YouCam APIs used
 
 | API | What it drives |
